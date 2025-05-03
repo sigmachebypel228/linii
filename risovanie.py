@@ -1,68 +1,74 @@
-def highliht_closest_point(mouse_pos):
-    closest_point = None
-    closest_distance = float('inf')
-    for point in points:
-        distance=((point[0] - mouse_pos[0]) ** 2 + (point[1] - mouse_pos[1]) ** 2)**0.5
-        if distance <= point_radius**2 and distance <closest_distance:
-            closest_point = point
-            closest_distance = distance
-    if closest_point is not None:
-        pygame.draw.circle(screen,highlight_color,closest_point,point_radius)
-
-def remove_point(mouse_pos):
-    for point in points:
-        if ((point[0] - mouse_pos[0])**2+(point[1]- mouse_pos[1])**2 <= point_radius**2):
-            points.remove(point)
-            break
-from all_colors import*
 import pygame
+
+# Инициализация библиотеки PyGame
 pygame.init()
+
+# Размер окна
 size = (1280, 720)
 screen = pygame.display.set_mode(size)
-pygame.display.set_caption("Рисование линии")
-BACKGROUND = (0,0,0)
+pygame.display.set_caption("Рисование прямых линий")
+
+# Фоновый цвет (чёрный)
+BACKGROUND = (0, 0, 0)
 screen.fill(BACKGROUND)
-points = []
-point_radius = 5
-highlight_color = (255,0,0)
-line_color = (255,255,255)
-preview_color = (192,192,192)
-show_preview = True
+
+# Цвет основной линии (белый)
+LINE_COLOR = (255, 255, 255)
+
+# Цвет линии предварительного просмотра (серый)
+PREVIEW_COLOR = (192, 192, 192)
+
+# Списки для хранения всех нарисованных линий
+lines = []
+
+# Хранение координат начала и конца текущей линии
+start_point = None
+end_point = None
+
+# Частота кадров
 FPS = 60
 clock = pygame.time.Clock()
+
+# Основной цикл
 running = True
 while running:
-    # Обработка событий
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Нажали левую кнопку мыши
+                start_point = event.pos  # Начало новой линии
+                end_point = event.pos  # Конец совпадает с началом
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:  # Отпустили левую кнопку мыши
+                if start_point is not None and end_point is not None:
+                    lines.append((start_point, end_point))  # Фиксируем готовую линию
+                start_point = None
+                end_point = None
+        elif event.type == pygame.MOUSEMOTION:
+            if start_point is not None:  # Перетаскиваем конец линии вслед за движением мыши
+                end_point = event.pos
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            # Правая кнопка мыши создает новую линию и перезаписывает старую
+            if start_point is not None and end_point is not None:
+                lines.append((start_point, end_point))  # Фиксируем текущую линию
+                start_point = end_point  # Новая линия начинается с предыдущего конца
+                end_point = None  # Готовимся зафиксировать следующую точку
 
-            if event.button == 1:
-                points.append(event.pos)
-            elif event.button ==2:
-                points = []
-            elif event.button == 3:
-                remove_point(event.pos)
-
-
-
-
-
-
-    #Основная логика
-    #Отрисовка объектов
+    # Очищаем экран
     screen.fill(BACKGROUND)
-    for i in range(len(points) - 1):
-        start_pos = points[i]
-        end_pos = points[i+1]
-        pygame.draw.line(screen,line_color,start_pos,end_pos,3)
-    if len(points)>1 and show_preview == True:
-        last_point = points[i]
-        mouse_pos = pygame.mouse.get_pos()
-        pygame.draw.line(screen,preview_color,mouse_pos,last_point,1)
-        pos = pygame.mouse.get_pos()
-        highliht_closest_point(pos)
+
+    # Отрисовываем готовые линии
+    for s, e in lines:
+        pygame.draw.line(screen, LINE_COLOR, s, e, 3)
+
+    # Предпросмотр текущей линии
+    if start_point is not None and end_point is not None:
+        pygame.draw.line(screen, PREVIEW_COLOR, start_point, end_point, 3)
+
+    # Обновляем экран
     pygame.display.flip()
     clock.tick(FPS)
+
+# Выходим из PyGame
 pygame.quit()
